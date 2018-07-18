@@ -122,6 +122,21 @@ func EnsureHTTPS(allowXForwardedProto bool) Adapter {
 	}
 }
 
+// OnCheck adapter checks the return of the function. On true, it calls the handler.
+// On false, it will call the handler passed to the Adapter.
+func OnCheck(f func(*http.Request) bool, trueHandler http.Handler) Adapter {
+	return func(h http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if f(r) {
+				trueHandler.ServeHTTP(w, r)
+			} else {
+				h.ServeHTTP(w, r)
+			}
+		})
+	}
+
+}
+
 func isHTTPS(r *http.Request, allowXForwardedProto bool) bool {
 	return (r.TLS != nil && r.TLS.HandshakeComplete) || (allowXForwardedProto && r.Header.Get("X-Forwarded-Proto") == "https")
 }
