@@ -38,6 +38,21 @@ func GetAndOtherRequest(other http.Handler, method string) Adapter {
 	}
 }
 
+// RequestMethod adapter allow allows the given request method.
+// All other requests are given a http.StatusMethodNotAllowed error.
+func RequestMethod(method string) Adapter {
+	return func(h http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.Method == method {
+				h.ServeHTTP(w, r)
+			} else {
+				// We are not allowing this method so respond with an error
+				http.Error(w, "Request method not allowed", http.StatusMethodNotAllowed)
+			}
+		})
+	}
+}
+
 // AddHeader adapter adds the header before calling the handler
 func AddHeader(name, value string) Adapter {
 	return func(h http.Handler) http.Handler {
