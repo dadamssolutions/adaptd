@@ -72,3 +72,41 @@ func DisallowLongerPaths(path string) Adapter {
 		})
 	}
 }
+
+// HTTPSRedirect adapter redirects all HTTP requests to HTTPS requests.
+// Most users should simply call this as `http.ListenAndServer(":80", HTTPSRedirect())`
+func HTTPSRedirect() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		target := "https://" + r.Host + r.URL.Path
+		if len(r.URL.RawQuery) > 0 {
+			target += "?" + r.URL.RawQuery
+		}
+		log.Printf("redirect to: %s", target)
+		http.Redirect(w, r, target, http.StatusTemporaryRedirect)
+	})
+}
+
+// EnsureHTTPS adapter redirects an HTTP request to an HTTPS request.
+// Some hosts forward requests and use 'X-Forward-Proto == "https"'
+// to indicate that he request was made with https protocol.
+// If you would like to allow this as a valid check, then the parameter should be true.
+func EnsureHTTPS(allowXForwardedProto bool) Adapter {
+	return func(h http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if !isHTTPS(r, allowXForwardedProto) {
+				target := "https://" + r.Host + r.URL.Path
+				if len(r.URL.RawQuery) > 0 {
+					target += "?" + r.URL.RawQuery
+				}
+				log.Printf("redirect to: %s", target)
+				http.Redirect(w, r, target, http.StatusTemporaryRedirect)
+				return
+			}
+			h.ServeHTTP(w, r)
+		})
+	}
+}
+
+func isHTTPS(r *http.Request, allowXForwardedProto bool) bool {
+	return (r.TLS != nil && r.TLS.HandshakeComplete) || (allowXForwardedProto && r.Header.Get("X-Forwarded-Proto") == "https")
+}
