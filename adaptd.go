@@ -134,7 +134,12 @@ func OnCheck(f func(*http.Request) bool, trueHandler http.Handler) Adapter {
 			}
 		})
 	}
+}
 
+// CheckAndRedirect adapter checks the return of the function. On true, it redirects to the given URL.
+// On false, it will cal the handler passed to the Adapater.
+func CheckAndRedirect(f func(*http.Request) bool, redirectURL string, statusCode int) Adapter {
+	return OnCheck(f, http.RedirectHandler(redirectURL, statusCode))
 }
 
 func isHTTPS(r *http.Request, allowXForwardedProto bool) bool {
