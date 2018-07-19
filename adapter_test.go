@@ -1,6 +1,7 @@
 package adaptd
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -8,6 +9,33 @@ import (
 )
 
 var checkNumber int
+
+func TestHTTPSRedirectHTTP(t *testing.T) {
+	checkNumber = 0
+	ts := httptest.NewServer(EnsureHTTPS(false)(http.HandlerFunc(handlerTester)))
+	defer ts.Close()
+
+	client := ts.Client()
+	client.CheckRedirect = checkRedirect
+	resp, err := client.Get(ts.URL)
+
+	if err == nil || resp.StatusCode != http.StatusTemporaryRedirect || checkNumber != 0 {
+		t.Error("HTTP request not redirected")
+	}
+}
+func TestHTTPSRedirectHTTPS(t *testing.T) {
+	checkNumber = 0
+	ts := httptest.NewTLSServer(EnsureHTTPS(false)(http.HandlerFunc(handlerTester)))
+	defer ts.Close()
+
+	client := ts.Client()
+	resp, err := client.Get(ts.URL)
+
+	if err != nil || resp.StatusCode != http.StatusOK || checkNumber != 1 {
+		log.Println(err)
+		t.Error("HTTPS request unexpectedly redirected")
+	}
+}
 
 func TestDisallowingLongerPathsBasic(t *testing.T) {
 	checkNumber = 0
@@ -51,4 +79,8 @@ func TestDisallowingLongerPathsWithLongerURL(t *testing.T) {
 func handlerTester(w http.ResponseWriter, r *http.Request) {
 	log.Println("Handling test request")
 	checkNumber++
+}
+
+func checkRedirect(req *http.Request, via []*http.Request) error {
+	return fmt.Errorf("Redirected to %v", req.URL)
 }
