@@ -122,13 +122,13 @@ func EnsureHTTPS(allowXForwardedProto bool) Adapter {
 	}
 }
 
-// OnCheck adapter checks the return of the function. On true, it calls the handler.
-// On false, it will call the handler passed to the Adapter.
-func OnCheck(f func(*http.Request) bool, trueHandler http.Handler) Adapter {
+// OnCheck adapter checks the return of the function. On false, it calls the handler.
+// On true, it will call the handler passed to the Adapter.
+func OnCheck(f func(http.ResponseWriter, *http.Request) bool, falseHandler http.Handler) Adapter {
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if f(r) {
-				trueHandler.ServeHTTP(w, r)
+			if !f(w, r) {
+				falseHandler.ServeHTTP(w, r)
 			} else {
 				h.ServeHTTP(w, r)
 			}
@@ -136,9 +136,9 @@ func OnCheck(f func(*http.Request) bool, trueHandler http.Handler) Adapter {
 	}
 }
 
-// CheckAndRedirect adapter checks the return of the function. On true, it redirects to the given URL.
-// On false, it will cal the handler passed to the Adapater.
-func CheckAndRedirect(f func(*http.Request) bool, redirectURL string, statusCode int) Adapter {
+// CheckAndRedirect adapter checks the return of the function. On false, it redirects to the given URL.
+// On true, it will call the handler passed to the Adapater.
+func CheckAndRedirect(f func(http.ResponseWriter, *http.Request) bool, redirectURL string, statusCode int) Adapter {
 	return OnCheck(f, http.RedirectHandler(redirectURL, statusCode))
 }
 
