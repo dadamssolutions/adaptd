@@ -88,6 +88,17 @@ func AddHeaderWithFunc(name string, tg func() string) Adapter {
 	}
 }
 
+// AddCookieWithFunc adds the header before calling the handler.
+// This is useful for things like CSRF tokens.
+func AddCookieWithFunc(name string, tg func(http.ResponseWriter) error) Adapter {
+	return func(h http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			tg(w)
+			h.ServeHTTP(w, r)
+		})
+	}
+}
+
 // DisallowLongerPaths adapter returns http.NotFound Error if the URL path is longer than the registered one
 func DisallowLongerPaths(path string) Adapter {
 	return func(h http.Handler) http.Handler {
@@ -153,8 +164,8 @@ func OnCheck(f func(http.ResponseWriter, *http.Request) bool, falseHandler http.
 
 // CheckAndRedirect adapter checks the return of the function. On false, it redirects to the given URL.
 // On true, it will call the handler passed to the Adapater.
-func CheckAndRedirect(f func(http.ResponseWriter, *http.Request) bool, redirectURL, logOnRedirect string, statusCode int) Adapter {
-	return OnCheck(f, http.RedirectHandler(redirectURL, statusCode), logOnRedirect+" redirecting to "+redirectURL)
+func CheckAndRedirect(f func(http.ResponseWriter, *http.Request) bool, redirect http.Handler, logOnRedirect string) Adapter {
+	return OnCheck(f, redirect, logOnRedirect+" redirecting")
 }
 
 func isHTTPS(r *http.Request, allowXForwardedProto bool) bool {
