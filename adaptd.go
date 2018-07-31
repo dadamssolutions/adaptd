@@ -100,12 +100,12 @@ func AddCookieWithFunc(name string, tg func(http.ResponseWriter) error) Adapter 
 }
 
 // DisallowLongerPaths adapter returns http.NotFound Error if the URL path is longer than the registered one
-func DisallowLongerPaths(path string) Adapter {
+func DisallowLongerPaths(path string, notFoundHandler http.Handler) Adapter {
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if r.URL.Path != path {
 				log.Printf("Handler expects URL %v but received a request at %v\n", path, r.URL.Path)
-				http.NotFound(w, r)
+				notFoundHandler.ServeHTTP(w, r)
 				return
 			}
 			h.ServeHTTP(w, r)

@@ -39,7 +39,7 @@ func TestHTTPSRedirectHTTPS(t *testing.T) {
 
 func TestDisallowingLongerPathsBasic(t *testing.T) {
 	checkNumber = 0
-	server := httptest.NewServer(DisallowLongerPaths("/")((http.HandlerFunc(handlerTester))))
+	server := httptest.NewServer(DisallowLongerPaths("/", http.HandlerFunc(http.NotFound))((http.HandlerFunc(handlerTester))))
 	defer server.Close()
 	client := server.Client()
 	req, _ := http.NewRequest("GET", server.URL, nil)
@@ -58,7 +58,7 @@ func TestDisallowingLongerPathsBasic(t *testing.T) {
 
 func TestDisallowingLongerPathsWithLongerURL(t *testing.T) {
 	checkNumber = 0
-	server := httptest.NewServer(DisallowLongerPaths("/login")(http.HandlerFunc(handlerTester)))
+	server := httptest.NewServer(DisallowLongerPaths("/login", http.HandlerFunc(http.NotFound))(http.HandlerFunc(handlerTester)))
 	defer server.Close()
 	server.URL += "/login"
 	client := server.Client()
