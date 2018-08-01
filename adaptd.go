@@ -4,6 +4,7 @@ package adaptd
 import (
 	"log"
 	"net/http"
+	"strings"
 )
 
 // Adapter is a type that helps with http middleware.
@@ -114,14 +115,14 @@ func DisallowLongerPaths(path string, notFoundHandler http.Handler) Adapter {
 }
 
 // HTTPSRedirect adapter redirects all HTTP requests to HTTPS requests.
-// Most users should simply call this as `http.ListenAndServe(":80", HTTPSRedirect())`
-func HTTPSRedirect() http.Handler {
+// Most users should simply call this as `go http.ListenAndServe(":80", HTTPSRedirect("443"))`
+func HTTPSRedirect(port string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		target := "https://" + r.Host + r.URL.Path
+		target := "https://" + strings.Split(r.Host, ":")[0] + ":" + port + r.URL.Path
 		if len(r.URL.RawQuery) > 0 {
 			target += "?" + r.URL.RawQuery
 		}
-		log.Printf("redirect to: %s", target)
+		log.Printf("HTTP request redirected to: %s", target)
 		http.Redirect(w, r, target, http.StatusTemporaryRedirect)
 	})
 }
