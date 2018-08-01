@@ -114,7 +114,7 @@ func DisallowLongerPaths(path string, notFoundHandler http.Handler) Adapter {
 }
 
 // HTTPSRedirect adapter redirects all HTTP requests to HTTPS requests.
-// Most users should simply call this as `http.ListenAndServer(":80", HTTPSRedirect())`
+// Most users should simply call this as `http.ListenAndServe(":80", HTTPSRedirect())`
 func HTTPSRedirect() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		target := "https://" + r.Host + r.URL.Path
