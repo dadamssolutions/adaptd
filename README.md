@@ -34,9 +34,9 @@ func main() {
     // Login handler should use HTTPS and handle GET and POST requests
     // Use Adapt to add multiple Adapters at once.
     // Be sure to check HTTPS first.
-    loginHandler = adaptd.Adapt(adaptd.EnsureHTTPS(false),
-                                loginHandler,
-                                adaptd.GetAndOtherRequest(loginPostHandler, http.MethodPost))
+    loginHandler = adaptd.Adapt(loginHandler,
+                    adaptd.EnsureHTTPS(false),
+                    adaptd.GetAndOtherRequest(loginPostHandler, http.MethodPost))
     http.Handle("/login", loginHandler)
 
     http.ListenAndServeTLS(":8080", "cert.pem", "key.pem", nil)
