@@ -10,7 +10,14 @@ import (
 // Adapter is a type that helps with http middleware.
 type Adapter func(http.Handler) http.Handler
 
-// Adapt is a helper to add all the adapters required for a given Handler
+// HandlerChecker checks the *http.Request and allows an Adapter to use different Handlers
+// based on its return. For example, a HandlerChecker can check if a user is logged in when
+// the login page is visited. If no user is logged in, the login page is shown. If a user is already
+// logged in, then the Adapter might redirect to another page.
+type HandlerChecker func(http.ResponseWriter, *http.Request) bool
+
+// Adapt is a helper to add all the adapters required for a given http.Handler.
+// Adapters will be called in the order they are given when the returned http.Handler is called.
 func Adapt(h http.Handler, adapters ...Adapter) http.Handler {
 	// Attach adapters in reverse order because that is what should be implied by the ordering of the caller.
 	// They way the middleware will work is the first adapter applied will be the last one to get called.
@@ -34,7 +41,7 @@ func Notify(logger *log.Logger) Adapter {
 // GetAndOtherRequest adapter uses two handlers to handle both get requests and another.
 // All other requests are given a http.StatusMethodNotAllowed error.
 // The other handler is provided to create the Adapter while the get handler should be provided to the Adapter
-// e.g. `GetAndOtherRequest(other, http.MethodPost)(getHandler)`
+// e.g. GetAndOtherRequest(other, http.MethodPost)(getHandler)
 func GetAndOtherRequest(other http.Handler, method string) Adapter {
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -100,7 +107,9 @@ func AddCookieWithFunc(name string, tg func(http.ResponseWriter) error) Adapter 
 	}
 }
 
-// DisallowLongerPaths adapter returns http.NotFound Error if the URL path is longer than the registered one
+// DisallowLongerPaths adapter calls the notFoundHandler if the URL path is longer than the registered one.
+// For example, paths that do not match any registered handler are sent to the handler for "/".
+// Adding this Adapter could display at custom 404 page.
 func DisallowLongerPaths(path string, notFoundHandler http.Handler) Adapter {
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -115,7 +124,7 @@ func DisallowLongerPaths(path string, notFoundHandler http.Handler) Adapter {
 }
 
 // HTTPSRedirect adapter redirects all HTTP requests to HTTPS requests.
-// Most users should simply call this as `go http.ListenAndServe(":80", HTTPSRedirect("443"))`
+// Most users should simply call this as go http.ListenAndServe(":80", HTTPSRedirect("443"))
 func HTTPSRedirect(port string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		target := "https://" + strings.Split(r.Host, ":")[0] + ":" + port + r.URL.Path
