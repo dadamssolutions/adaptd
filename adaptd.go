@@ -100,10 +100,10 @@ func AddHeaderWithFunc(name string, tg func() string) Adapter {
 
 // AddCookieWithFunc adds the header before calling the handler.
 // This is useful for things like CSRF tokens.
-func AddCookieWithFunc(name string, tg func(http.ResponseWriter) error) Adapter {
+func AddCookieWithFunc(name string, tg func(http.ResponseWriter, *http.Request) error) Adapter {
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			tg(w)
+			tg(w, r)
 			h.ServeHTTP(w, r)
 		})
 	}
