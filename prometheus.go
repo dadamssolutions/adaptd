@@ -35,7 +35,7 @@ func CountHTTPResponses() Adapter {
 func TrackHTTPResponseTimes() Adapter {
 	httpRequests := prometheus.NewSummaryVec(
 		prometheus.SummaryOpts{
-			Name: "http_requests_secs",
+			Name: "http_requests_seconds",
 			Help: "The response times to HTTP requests, partitioned by endpoint, status code, and HTTP method.",
 		},
 		[]string{"endpoint", "code", "method"},
